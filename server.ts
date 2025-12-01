@@ -1,6 +1,24 @@
+
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import express from 'express';
+
+// CORS middleware to allow any localhost origin
+import type { Request, Response, NextFunction } from 'express';
+function allowLocalhostCORS(req: Request, res: Response, next: NextFunction) {
+    const origin = req.headers.origin;
+    if (origin && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,mcp-protocol-version');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(204);
+    } else {
+        next();
+    }
+}
 import { z } from 'zod';
 
 // Create an MCP server
@@ -8,6 +26,7 @@ const server = new McpServer({
     name: 'demo-server',
     version: '1.0.0'
 });
+
 
 // Add an addition tool
 server.registerTool(
@@ -20,6 +39,25 @@ server.registerTool(
     },
     async ({ a, b }) => {
         const output = { result: a + b };
+        return {
+            content: [{ type: 'text', text: JSON.stringify(output) }],
+            structuredContent: output
+        };
+    }
+);
+
+// Add a current time tool
+server.registerTool(
+    'currentTime',
+    {
+        title: 'Current Time Tool',
+        description: 'Request the current time',
+        inputSchema: {},
+        outputSchema: { result: z.string() }
+    },
+    async () => {
+        const now = new Date().toISOString();
+        const output = { result: now };
         return {
             content: [{ type: 'text', text: JSON.stringify(output) }],
             structuredContent: output
@@ -45,8 +83,11 @@ server.registerResource(
     })
 );
 
+
+
 // Set up Express and HTTP transport
 const app = express();
+app.use(allowLocalhostCORS);
 app.use(express.json());
 
 app.post('/mcp', async (req, res) => {
