@@ -33,7 +33,7 @@ server.registerTool(
     'add',
     {
         title: 'Addition Tool',
-        description: 'Add two numbers',
+        description: 'Adds two given numbers together. Use this for all addition and simple calculation requests.',
         inputSchema: { a: z.number(), b: z.number() },
         outputSchema: { result: z.number() }
     },
@@ -48,10 +48,10 @@ server.registerTool(
 
 // Add a current time tool
 server.registerTool(
-    'currentTime',
+    'current_time',
     {
         title: 'Current Time Tool',
-        description: 'Request the current time',
+        description: 'Returns the current date and time. Use this when the user asks what time it is, or for any time/date-related query.',
         inputSchema: {},
         outputSchema: { result: z.string() }
     },
